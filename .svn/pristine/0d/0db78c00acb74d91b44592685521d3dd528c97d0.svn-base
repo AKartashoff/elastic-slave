@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="SBT: pentaho-kettle:kettle-engine:5.0.5:jar">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.ivy2/cache/pentaho-kettle/kettle-engine/jars/kettle-engine-5.0.5.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

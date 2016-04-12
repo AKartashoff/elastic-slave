@@ -1,0 +1,17 @@
+name := "elastic-slave"
+
+version := "1.0-SNAPSHOT"
+
+resolvers += "Pentaho Maven2 Repository" at "http://repository.pentaho.org/artifactory/repo"
+
+libraryDependencies ++= Seq(
+  javaJdbc,
+  javaEbean,
+  cache,
+  "postgresql" % "postgresql" % "9.1-901-1.jdbc4",
+  "pentaho-kettle" % "kettle-core" % "5.0.5",
+  "pentaho-kettle" % "kettle-dbdialog" % "5.0.5",
+  "pentaho-kettle" % "kettle-engine" % "5.0.5"
+)     
+
+play.Project.playJavaSettings

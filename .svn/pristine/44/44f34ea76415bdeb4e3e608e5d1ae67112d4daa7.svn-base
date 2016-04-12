@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="SBT: org.owasp.esapi:esapi:2.0.1:jar">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.ivy2/cache/org.owasp.esapi/esapi/jars/esapi-2.0.1.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

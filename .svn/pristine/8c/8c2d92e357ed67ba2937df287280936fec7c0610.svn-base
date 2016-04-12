@@ -1,0 +1,86 @@
+package controllers;
+
+import org.pentaho.di.core.KettleEnvironment;
+import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.core.logging.KettleLogStore;
+import org.pentaho.di.core.logging.LogLevel;
+import org.pentaho.di.core.logging.LoggingBuffer;
+import org.pentaho.di.trans.Trans;
+import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.step.StepMetaDataCombi;
+import play.mvc.Controller;
+import play.mvc.Result;
+import views.html.index;
+
+public class Application extends Controller {
+
+    public static Result index() {
+        return ok(index.render("Your new application is ready."));
+    }
+
+    /**
+     * receives etl flow as an xml file and calls for its execution in pentaho (kettle)
+     * @return the pentaho result
+     */
+    public static Result getAndRunEtl() {
+        System.out.println("getAndRunEtl(): " + "I enter the method");
+
+        String body = request().body().asFormUrlEncoded().get("data")[0];
+
+        String res = runTransformation(body);
+        if (body != null) {
+            System.out.println("getAndRunXMLContent(): "+ "I am printing the body: " + body);
+        } else {
+            flash("error", "Missing file");
+            return ok("Missing file");
+        }
+        return ok(res);
+    }
+
+
+
+    /**
+     * runs pentaho kettle transformation
+     * @param file path to the file
+     * @return execution time
+     */
+    public static String runTransformation(String file) {
+        try {
+            System.out.println("runTransformation(): " + "I enter the method");
+            StringBuffer sb = new StringBuffer();
+
+            //initialising kettle environment
+            KettleEnvironment.init();
+
+            TransMeta metadata = new TransMeta(file);
+            Trans trans = new Trans(metadata);
+
+            trans.setLogLevel(LogLevel.DETAILED);
+            // Execute the transformation
+            trans.execute(null);
+
+            trans.waitUntilFinished();
+
+            LoggingBuffer appender = KettleLogStore.getAppender();
+            // retrieve logging lines for transformation
+            String logText = appender.getBuffer(trans.getLogChannelId(), false).toString();
+            // checking for errors
+            if (trans.getErrors() > 0) {
+                return  "Erroruting Transformation";
+            }
+            //writing each step metrics to the stringbuffer
+            for (StepMetaDataCombi combi : trans.getSteps()) {
+            	// ------ vasileios comment
+            	// also add the units of measurement, e.g., "msec" and "rows"
+                sb.append("Step name: ").append(combi.stepname).append(" Processed: ").append(combi.step.getProcessed()).append(" Input: ").append(combi.step.getLinesInput()).append(" Runtime: ").append(combi.step.getRuntime()).append("\n");
+            }
+
+            return (sb.toString());
+
+        } catch (KettleException ex) {
+            return ex.getMessage();
+        }
+    }
+
+
+}

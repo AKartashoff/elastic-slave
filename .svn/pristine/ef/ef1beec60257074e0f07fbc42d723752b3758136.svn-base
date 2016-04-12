@@ -1,0 +1,144 @@
+package controllers;
+
+import org.h2.command.dml.Delete;
+import org.pentaho.di.core.KettleEnvironment;
+import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.core.logging.KettleLogStore;
+import org.pentaho.di.core.logging.LogLevel;
+import org.pentaho.di.core.logging.LoggingBuffer;
+import org.pentaho.di.trans.Trans;
+import org.pentaho.di.trans.TransMeta;
+import org.pentaho.di.trans.step.StepMetaDataCombi;
+import play.mvc.Controller;
+import play.mvc.Result;
+import views.html.index;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.Statement;
+
+public class Application extends Controller {
+
+    public static Result index() {
+        return ok(index.render("Your new application is ready."));
+    }
+
+    /**
+     * receiving xml file content
+     * @return the pentaho result
+     */
+    public static Result getAndRunXMLContent() {
+        System.out.println("getAndRunXMLContent(): " + "I enter the method");
+
+        String body = request().body().asFormUrlEncoded().get("data")[0];
+
+        String res = runTransformation(body);
+        if (body != null) {
+            System.out.println("getAndRunXMLContent(): "+ "I am printing the body: " + body);
+        } else {
+            flash("error", "Missing file");
+            return ok("Missing file");
+        }
+        return ok(res);
+    }
+
+
+
+    /**
+     * running pentaho kettle transformation
+     * @param file path to the file
+     * @return execution time
+     */
+    public static String runTransformation(String file) {
+        Connection c = null;
+        Statement stmt = null;
+
+        try {
+            Class.forName("org.postgresql.Driver");
+            c = DriverManager
+                    .getConnection("jdbc:postgresql://52.28.66.240:5432/tpch",
+                            "tpch", "pentaho");
+            c.setAutoCommit(false);
+            System.out.println("Opened database successfully");
+
+            stmt = c.createStatement();
+
+            // выполняем запрос delete SQL
+            stmt.execute("DELETE FROM dw_supplier");
+            System.out.println("Record is deleted from dw_supplier table!");
+
+            stmt.close();
+            c.close();
+        } catch ( Exception e ) {
+            System.err.println( e.getClass().getName()+": "+ e.getMessage() );
+            System.exit(0);
+        }
+
+
+        try {
+            System.out.println("runTransformation(): " + "I enter the method");
+            StringBuffer sb = new StringBuffer();
+
+            //stringbuffer for null rows counting sql query
+            StringBuffer sb1 = new StringBuffer();
+
+            //initialising kettle environment
+            KettleEnvironment.init();
+
+            TransMeta metadata = new TransMeta(file);
+            Trans trans = new Trans(metadata);
+
+            trans.setLogLevel(LogLevel.DETAILED);
+            // Execute the transformation
+            trans.execute(null);
+
+            trans.waitUntilFinished();
+
+            LoggingBuffer appender = KettleLogStore.getAppender();
+            // retrieve logging lines for transformation
+            String logText = appender.getBuffer(trans.getLogChannelId(), false).toString();
+            // checking for errors
+            if (trans.getErrors() > 0) {
+                return  "Erroruting Transformation";
+            }
+            //writing each step metrics to the stringbuffer
+            for (StepMetaDataCombi combi : trans.getSteps()) {
+                sb.append("Step name: ").append(combi.stepname).append(" Processed: ").append(combi.step.getProcessed()).append(" Input: ").append(combi.step.getLinesInput()).append(" Runtime: ").append(combi.step.getRuntime()).append("\n");
+            }
+
+            try {
+                Class.forName("org.postgresql.Driver");
+                c = DriverManager
+                        .getConnection("jdbc:postgresql://52.28.66.240:5432/tpch",
+                                "tpch", "pentaho");
+                c.setAutoCommit(false);
+                System.out.println("Opened database successfully");
+
+                stmt = c.createStatement();
+                ResultSet rs = stmt.executeQuery("SELECT COUNT (*) AS totalNullValues FROM dw_supplier WHERE s_suppkey IS NULL OR s_name IS NULL OR s_address is NULL OR s_nationkey IS NULL OR s_phone IS NULL OR s_comment IS NULL OR s_acctbal IS NULL ");
+                while ( rs.next() ) {
+                    int totalNullValues = rs.getInt("totalNullValues");
+                    sb1.append(totalNullValues);
+                }
+                ResultSet rs1 = stmt.executeQuery("SELECT * FROM dw_supplier");
+                int counterNullValues = 0;
+                while ( rs1.next() ) {
+                    if (rs1.wasNull()) counterNullValues++;
+                }
+                sb.append("Number of Null values in the OUTPUT table: ").append(counterNullValues).append(" + ").append(sb1).append("\n");
+                rs.close();
+                stmt.close();
+                c.close();
+            } catch ( Exception e ) {
+                System.err.println( e.getClass().getName()+": "+ e.getMessage() );
+                System.exit(0);
+            }
+            return (sb.toString());
+
+        } catch (KettleException ex) {
+            return ex.getMessage();
+        }
+    }
+
+
+}

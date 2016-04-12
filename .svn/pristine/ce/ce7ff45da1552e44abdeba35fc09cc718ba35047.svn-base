@@ -1,0 +1,9 @@
+[0m[[0minfo[0m] [0mPackaging /Users/antonkartashov/Documents/project/elastic-slave/target/scala-2.10/elastic-slave_2.10-1.0-SNAPSHOT-sources.jar ...[0m
+[0m[[0mdebug[0m] [0mInput file mappings:[0m
+[0m[[0mdebug[0m] [0m	application.conf[0m
+[0m[[0mdebug[0m] [0m	  /Users/antonkartashov/Documents/project/elastic-slave/conf/application.conf[0m
+[0m[[0mdebug[0m] [0m	routes[0m
+[0m[[0mdebug[0m] [0m	  /Users/antonkartashov/Documents/project/elastic-slave/conf/routes[0m
+[0m[[0mdebug[0m] [0m	controllers/Application.java[0m
+[0m[[0mdebug[0m] [0m	  /Users/antonkartashov/Documents/project/elastic-slave/app/controllers/Application.java[0m
+[0m[[0minfo[0m] [0mDone packaging.[0m
